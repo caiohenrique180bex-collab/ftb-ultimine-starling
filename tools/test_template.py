@@ -31,7 +31,7 @@ def main():
         (original / "Cargo.toml").write_text('[workspace]\nmembers=["crates/horizon-client"]\nresolver="2"\n')
         (original / "crates/horizon-client/Cargo.toml").write_text('[package]\nname="horizon-client"\nversion="0.1.0"\nedition="2024"\n')
         (game / "lib.rs").write_text("pub mod game;\n")
-        (game / "game.rs").write_text("""pub struct Game; impl Game { pub fn break_block(&mut self, pos:[i32;3])->i32 { pos[0] } }\n""")
+        (game / "game.rs").write_text("""pub struct Game<'a>(std::marker::PhantomData<&'a ()>); impl Game<'_> { pub fn break_block(&mut self, pos:[i32;3])->i32 { pos[0] } }\n""")
         (original / "rust-toolchain.toml").write_text((root / "rust-toolchain.toml").read_text())
         (original / ".horizon-revision").write_text(horizon.PIN + "\n")
         run(["cargo", "generate-lockfile", "--offline"], original)
