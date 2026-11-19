@@ -17,6 +17,7 @@ def run(command, cwd):
 
 def main():
     root = horizon.ROOT
+    (root / 'target').mkdir(exist_ok=True)
     mixins = horizon.MIXINS
     run(["cargo", "build", "--locked", "--offline", "-p", "horizon-mixins-cli"], mixins)
     cli = mixins / "target/debug/horizon-mixins"
