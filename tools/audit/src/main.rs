@@ -16,7 +16,11 @@ fn block<'a>(items: &'a mut [Item], node: &[usize]) -> &'a mut Block {
 }
 
 fn canonical(items: &[Item]) -> String {
-    prettyplease::unparse(&syn::File { shebang: None, attrs: vec![], items: items.to_vec() })
+    prettyplease::unparse(&syn::File {
+        shebang: None,
+        attrs: vec![],
+        items: items.to_vec(),
+    })
 }
 
 fn main() {
@@ -28,14 +32,22 @@ fn main() {
         let tree = trees.entry(file).or_insert_with(|| {
             syn::parse_file(&fs::read_to_string(Path::new(&args[2]).join(file)).unwrap()).unwrap()
         });
-        let node: Vec<usize> = p["node"].as_array().unwrap().iter()
-            .map(|n| n.as_u64().unwrap() as usize).collect();
+        let node: Vec<usize> = p["node"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|n| n.as_u64().unwrap() as usize)
+            .collect();
         assert_eq!(p["kind"], "HEAD");
         assert_eq!(p["cancellable"], false);
         let helper: syn::ItemFn = syn::parse_str(p["helper_source"].as_str().unwrap()).unwrap();
         let name = &helper.sig.ident;
-        let call_args: Vec<syn::Expr> = p["bindings"].as_array().unwrap().iter()
-            .map(|b| syn::parse_str(b["value"].as_str().unwrap()).unwrap()).collect();
+        let call_args: Vec<syn::Expr> = p["bindings"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|b| syn::parse_str(b["value"].as_str().unwrap()).unwrap())
+            .collect();
         let expected: syn::Stmt = syn::parse2(quote!({#helper #name(#(#call_args),*)};)).unwrap();
         let body = block(&mut tree.items, &node);
         let actual = body.stmts.first().expect("HEAD missing");
@@ -50,16 +62,25 @@ fn main() {
         let index = tree.items.iter().position(|item|
             matches!(item, Item::Mod(value) if value.ident == module["name"].as_str().unwrap())
         ).expect("support module missing");
-        let Item::Mod(actual) = tree.items.remove(index) else { unreachable!() };
+        let Item::Mod(actual) = tree.items.remove(index) else {
+            unreachable!()
+        };
         let payload = syn::parse_file(module["source"].as_str().unwrap()).unwrap();
         assert!(actual.attrs.is_empty());
         assert!(matches!(&actual.vis, syn::Visibility::Restricted(v) if v.path.is_ident("crate")));
         let mut expected = actual.clone();
         expected.content.as_mut().unwrap().1 = payload.items;
-        assert_eq!(canonical(&[Item::Mod(actual)]), canonical(&[Item::Mod(expected)]));
+        assert_eq!(
+            canonical(&[Item::Mod(actual)]),
+            canonical(&[Item::Mod(expected)])
+        );
     }
     for (file, staged) in trees {
-        let original = syn::parse_file(&fs::read_to_string(Path::new(&args[1]).join(file)).unwrap()).unwrap();
-        assert_eq!(prettyplease::unparse(&original), prettyplease::unparse(&staged));
+        let original =
+            syn::parse_file(&fs::read_to_string(Path::new(&args[1]).join(file)).unwrap()).unwrap();
+        assert_eq!(
+            prettyplease::unparse(&original),
+            prettyplease::unparse(&staged)
+        );
     }
 }
