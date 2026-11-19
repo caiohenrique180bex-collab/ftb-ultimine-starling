@@ -19,11 +19,17 @@ jobs:
           git clone https://github.com/horizon-rust/horizon-mixins ../horizon-mixins
           git -C ../horizon-mixins checkout "$(python3 -c 'import json; print(json.load(open("compatibility.json"))["horizon_mixins_revision"])')"
           cargo fetch --locked --manifest-path ../horizon-mixins/Cargo.toml
+      - name: Check out pinned Horizon source
+        run: |
+          git clone https://github.com/horizon-rust/horizon ../horizon
+          git -C ../horizon checkout "$(python3 -c 'import json; print(json.load(open("compatibility.json"))["horizon_revision"])')"
+          cargo fetch --locked --manifest-path ../horizon/Cargo.toml
       - run: cargo fetch --locked
       - run: cargo fmt --all --check
       - run: cargo clippy --workspace --all-targets --locked --offline -- -D warnings
       - run: cargo test --workspace --locked --offline
-      - run: python3 tools/test_template.py
+      - name: Compile and test the real Horizon integration
+        run: python3 tools/horizon.py test --horizon ../horizon
       - name: Package native mod
         run: python3 tools/package.py
       - name: Upload .hnmod bundle
