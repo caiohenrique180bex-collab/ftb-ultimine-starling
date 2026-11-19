@@ -13,7 +13,7 @@ fn before_break(game: &mut Game<'_>, pos: [i32; 3]) {
     let origin = BlockPos(pos);
     let origin_state = game.world.block(pos[0], pos[1], pos[2]);
     let origin_name = game.res.facts().get(origin_state).name.clone();
-    if matches!(origin_name.as_str(), "minecraft:air" | "minecraft:cave_air" | "minecraft:void_air") { return; }
+    if matches!(&*origin_name, "minecraft:air" | "minecraft:cave_air" | "minecraft:void_air") { return; }
     let Some(eye) = game.eye_position() else { return; };
     let reach = game.reach();
     let within_reach = |candidate: BlockPos| {
@@ -30,7 +30,7 @@ fn before_break(game: &mut Game<'_>, pos: [i32; 3]) {
             let [x, y, z] = candidate.0;
             let state = game.world.block(x, y, z);
             let name = &game.res.facts().get(state).name;
-            !matches!(name.as_str(), "minecraft:air" | "minecraft:cave_air" | "minecraft:void_air") && within_reach(candidate)
+            !matches!(&*name, "minecraft:air" | "minecraft:cave_air" | "minecraft:void_air") && within_reach(candidate)
         }, AreaSize { width: 3, height: 3, depth: 3 }, limits.max_blocks)
     } else if let Some(family) = tree_family_key(&origin_name) {
         select_tree(origin, |candidate| {
