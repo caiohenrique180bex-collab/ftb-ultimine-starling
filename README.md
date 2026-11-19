@@ -2,7 +2,7 @@
 
 Port nativo em Rust, sem Forge, Fabric, NeoForge ou bibliotecas de terceiros em runtime.
 
-> **Estado atual: fundação do projeto.** Este primeiro estágio prepara o bundle nativo, o algoritmo puro de seleção de blocos e a automação de validação. A integração que efetivamente remove blocos em sequência ainda não está implementada; não confunda os testes do algoritmo com uma versão jogável.
+> **Estado atual:** núcleo de seleção implementado e validado por CI. O hook do jogo ainda não executa mineração múltipla; a integração de input, classificação de blocos e chamada segura à rotina nativa continua pendente. Portanto, esta ainda não é uma versão jogável.
 
 ## Alvo e formato
 
@@ -14,20 +14,27 @@ Este projeto segue o caminho de *native source-mixin* do Horizon. O launcher Hor
 - Revisão Horizon: definida em `compatibility.json`
 - Empacotamento: `python3 tools/package.py`
 
-## Plano de implementação
+## Núcleo implementado
 
-1. **Core** — seleção determinística de blocos conectados, limites de alcance e segurança.
-2. **Vein mining** — agrupar blocos adjacentes do mesmo tipo.
-3. **Tree felling** — reconhecer troncos e folhas sem atingir construções próximas.
-4. **Excavation** — padrões de área configuráveis.
-5. **Input e modos** — ativação por controle/toque e seleção de modo.
-6. **Integração** — executar quebras pelo caminho nativo do jogo, respeitando ferramenta, durabilidade, drops, proteção e servidor.
+- **Vein mining:** busca BFS de blocos conectados por seis faces, com chave de família, raio e limite.
+- **Tree felling:** mesma busca conectada, preparada para receber somente troncos classificados pelo adaptador do mundo; folhas ficam fora.
+- **Excavation:** seleção determinística de área cúbica, com filtro de elegibilidade.
+- **Segurança:** limite rígido de 256 posições por seleção, dimensões de área limitadas, proteção contra overflow de coordenadas e nenhuma mutação do mundo no algoritmo puro.
+- **Testes:** conectividade, filtro de família, limite de alcance, teto rígido, escavação e overflow.
 
-Cada etapa precisa ser validada no commit Horizon fixado antes de ser considerada concluída.
+Esses seletores são funções puras: eles não decidem se a ferramenta pode minerar, não geram drops e não removem blocos. Isso precisa acontecer pelo caminho normal do Horizon.
+
+## Próxima integração no jogo
+
+1. Ler o estado real do bloco e classificar minério/tronco/área elegível.
+2. Detectar a tecla/gesto de ativação e permitir selecionar o modo.
+3. Validar ferramenta, alcance, permissões e regras do servidor.
+4. Executar cada posição pela rotina nativa de quebra, sem recursão no hook.
+5. Testar durabilidade, drops, XP, eventos, proteção e multiplayer no jogo.
 
 ## Desenvolvimento
 
-O CI usa Linux, Rust 1.95.0 e Python 3.12. Os testes locais sem o código do Horizon:
+O CI usa Linux, Rust 1.95.0 e Python 3.12:
 
 ```sh
 cargo fmt --all --check
@@ -36,8 +43,8 @@ cargo test --workspace --locked --offline
 python3 tools/test_template.py
 ```
 
-Para compilar o cliente Horizon modificado e testar o bundle contra o jogo, siga o fluxo em `tools/horizon.py` e as instruções do template nativo compatível. O checkout do Horizon precisa conter o commit fixado em `compatibility.json`; os recursos do jogo são fornecidos separadamente pelo launcher.
+O workflow também empacota o `.hnmod` e publica-o como artifact quando todas as verificações passam.
 
 ## Segurança e integridade
 
-O primeiro protótipo não tenta quebrar blocos adicionais. A integração futura deve ter limites rígidos de blocos por ativação, evitar recursão nos próprios eventos e nunca contornar as regras normais do jogo.
+O mod não deve apagar blocos diretamente nem contornar regras do jogo. A implementação final deve usar a rotina normal de quebra, respeitar ferramentas e drops, limitar a quantidade por ativação e evitar recursão nos próprios eventos.
