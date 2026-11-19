@@ -1,4 +1,4 @@
-//! Testable core for Ultimine. The runtime stays dependency-free.
+// Testable core for Ultimine. The runtime stays dependency-free.
 
 use std::collections::{HashSet, VecDeque};
 
