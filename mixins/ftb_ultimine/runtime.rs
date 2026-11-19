@@ -105,11 +105,18 @@ mod tests {
         let selected = connected_blocks(
             BlockPos([0, 0, 0]),
             |p| ore.contains(&p).then_some(7),
-            SelectionLimits { radius: 8, max_blocks: 64 },
+            SelectionLimits {
+                radius: 8,
+                max_blocks: 64,
+            },
         );
         assert_eq!(
             selected,
-            vec![BlockPos([0, 0, 0]), BlockPos([1, 0, 0]), BlockPos([1, 1, 0])]
+            vec![
+                BlockPos([0, 0, 0]),
+                BlockPos([1, 0, 0]),
+                BlockPos([1, 1, 0])
+            ]
         );
     }
 
@@ -118,20 +125,33 @@ mod tests {
         let selected = connected_blocks(
             BlockPos([0, 0, 0]),
             |_| Some(1),
-            SelectionLimits { radius: 1, max_blocks: 3 },
+            SelectionLimits {
+                radius: 1,
+                max_blocks: 3,
+            },
         );
         assert_eq!(selected.len(), 3);
-        assert!(selected.iter().all(|p| p.within_radius(BlockPos([0, 0, 0]), 1)));
+        assert!(
+            selected
+                .iter()
+                .all(|p| p.within_radius(BlockPos([0, 0, 0]), 1))
+        );
     }
 
     #[test]
     fn air_origin_and_zero_cap_select_nothing() {
         let origin = BlockPos([0, 0, 0]);
         assert!(connected_blocks(origin, |_| None, SelectionLimits::default()).is_empty());
-        assert!(connected_blocks(
-            origin,
-            |_| Some(1),
-            SelectionLimits { radius: 8, max_blocks: 0 },
-        ).is_empty());
+        assert!(
+            connected_blocks(
+                origin,
+                |_| Some(1),
+                SelectionLimits {
+                    radius: 8,
+                    max_blocks: 0
+                },
+            )
+            .is_empty()
+        );
     }
 }
