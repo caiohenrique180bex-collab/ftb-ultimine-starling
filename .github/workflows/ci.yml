@@ -24,3 +24,11 @@ jobs:
       - run: cargo clippy --workspace --all-targets --locked --offline -- -D warnings
       - run: cargo test --workspace --locked --offline
       - run: python3 tools/test_template.py
+      - name: Package native mod
+        run: python3 tools/package.py
+      - name: Upload .hnmod bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: ftb-ultimine-hnmod
+          path: target/ftb_ultimine-0.1.0.hnmod
+          if-no-files-found: error
