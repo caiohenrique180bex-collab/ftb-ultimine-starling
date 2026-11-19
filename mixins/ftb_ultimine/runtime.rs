@@ -182,6 +182,49 @@ where
     selected
 }
 
+/// Stable FNV-1a key for a namespaced block name.
+pub fn block_name_key(name: &str) -> u32 {
+    name.as_bytes().iter().fold(0x811c9dc5, |hash, byte| {
+        (hash ^ u32::from(*byte)).wrapping_mul(0x01000193)
+    })
+}
+
+/// Returns a stable wood-family key for vanilla-style logs, woods, stems and
+/// hyphae. Non-log blocks (including leaves) are rejected.
+pub fn tree_family_key(name: &str) -> Option<u32> {
+    let suffix = ["_log", "_wood", "_stem", "_hyphae"]
+        .iter()
+        .find(|suffix| name.ends_with(**suffix))?;
+    let family = name.strip_suffix(suffix)?;
+    Some(block_name_key(family))
+}
+
+thread_local! {
+    static MULTIBREAK_ACTIVE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+/// Runs extra native break calls under a per-thread recursion guard. Calls
+/// re-entering the break hook on the same thread are ignored by the hook.
+pub fn with_multibreak_guard<F: FnOnce()>(action: F) {
+    let already_active = MULTIBREAK_ACTIVE.with(|active| active.replace(true));
+    if already_active {
+        return;
+    }
+    struct Reset;
+    impl Drop for Reset {
+        fn drop(&mut self) {
+            MULTIBREAK_ACTIVE.with(|active| active.set(false));
+        }
+    }
+    let _reset = Reset;
+    action();
+}
+
+/// True while the guarded extra-break loop is running.
+pub fn multibreak_is_active() -> bool {
+    MULTIBREAK_ACTIVE.with(std::cell::Cell::get)
+}
+
 /// Called by the native break hook. Multi-break is not activated until the
 /// native input, permission, and re-entrancy contracts are wired.
 pub fn on_break_attempt(pos: [i32; 3]) {
@@ -194,6 +237,25 @@ pub fn on_break_attempt(pos: [i32; 3]) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn name_keys_and_tree_families_are_stable_and_exclude_leaves() {
+        assert_eq!(tree_family_key("minecraft:oak_log"), tree_family_key("minecraft:oak_wood"));
+        assert_eq!(tree_family_key("minecraft:crimson_stem"), tree_family_key("minecraft:crimson_hyphae"));
+        assert_eq!(tree_family_key("minecraft:oak_leaves"), None);
+        assert_eq!(block_name_key("minecraft:diamond_ore"), block_name_key("minecraft:diamond_ore"));
+    }
+
+    #[test]
+    fn multibreak_guard_blocks_reentry_and_resets_after_action() {
+        assert!(!multibreak_is_active());
+        with_multibreak_guard(|| {
+            assert!(multibreak_is_active());
+            with_multibreak_guard(|| panic!("nested guard must not run"));
+            assert!(multibreak_is_active());
+        });
+        assert!(!multibreak_is_active());
+    }
 
     #[test]
     fn vein_selection_matches_family_and_face_connectivity() {
