@@ -1,0 +1,14 @@
+[package]
+name = "ftb-ultimine-starling"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95"
+license = "MIT"
+description = "Native Rust Ultimine port for Starling / Horizon"
+
+[lib]
+path = "mixins/ftb_ultimine/runtime.rs"
+
+[workspace]
+members = ["tools/audit"]
+resolver = "2"
