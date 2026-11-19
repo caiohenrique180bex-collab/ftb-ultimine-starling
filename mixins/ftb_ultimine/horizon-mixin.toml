@@ -17,4 +17,4 @@ id = "before-break"
 kind = "HEAD"
 target = "horizon_client::game::Game<'_>::break_block"
 helper = "break.rs"
-bindings = [{ name = "game", ty = "&mut Game<'_>", value = "self" }, { name = "pos", ty = "[i32;3]", value = "pos" }]
+bindings = [{ name = "game", ty = "&mut Game<'_>", value = "&mut *self" }, { name = "pos", ty = "[i32;3]", value = "pos" }]
