@@ -20,9 +20,10 @@ Este projeto segue o caminho de *native source-mixin* do Horizon. O launcher Hor
 - **Tree felling:** mesma busca conectada, preparada para receber somente troncos classificados pelo adaptador do mundo; folhas ficam fora.
 - **Excavation:** seleção determinística de área cúbica, com filtro de elegibilidade.
 - **Segurança:** limite rígido de 256 posições por seleção, dimensões de área limitadas, proteção contra overflow de coordenadas e nenhuma mutação do mundo no algoritmo puro.
+- **Ativação inicial:** segurar Shift durante a quebra ativa a seleção conectada; Shift + Ctrl seleciona uma área 3×3×3. Troncos reconhecidos são tratados como árvores.
 - **Testes:** conectividade, filtro de família, limite de alcance, teto rígido, escavação e overflow.
 
-Esses seletores são funções puras: eles não decidem se a ferramenta pode minerar, não geram drops e não removem blocos. Isso precisa acontecer pelo caminho normal do Horizon.
+O hook de gameplay agora consulta o mundo, limita a seleção ao alcance do jogador e solicita cada bloco extra pela rotina nativa Game::break_block, com proteção contra recursão. Assim, o Horizon continua responsável por ferramenta, durabilidade, drops, XP, eventos e regras de quebra. Ainda é necessário testar o comportamento no jogo e em multiplayer.
 
 ## Próxima integração no jogo
 
@@ -40,10 +41,10 @@ O CI usa Linux, Rust 1.95.0 e Python 3.12:
 cargo fmt --all --check
 cargo clippy --workspace --all-targets --locked --offline -- -D warnings
 cargo test --workspace --locked --offline
-python3 tools/test_template.py
+python3 tools/horizon.py test --horizon ../horizon
 ```
 
-O workflow também empacota o `.hnmod` e publica-o como artifact quando todas as verificações passam.
+O workflow compila e testa o mixin contra o checkout Horizon fixado, depois empacota o `.hnmod` e publica-o como artifact quando todas as verificações passam.
 
 ## Segurança e integridade
 
