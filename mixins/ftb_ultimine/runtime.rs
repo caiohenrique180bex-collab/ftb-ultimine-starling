@@ -35,7 +35,10 @@ pub struct SelectionLimits {
 
 impl Default for SelectionLimits {
     fn default() -> Self {
-        Self { radius: 8, max_blocks: 64 }
+        Self {
+            radius: 8,
+            max_blocks: 64,
+        }
     }
 }
 
@@ -109,7 +112,11 @@ pub struct AreaSize {
 
 impl Default for AreaSize {
     fn default() -> Self {
-        Self { width: 3, height: 3, depth: 1 }
+        Self {
+            width: 3,
+            height: 3,
+            depth: 1,
+        }
     }
 }
 
@@ -159,9 +166,15 @@ where
     for dx in start_x..(start_x + width) {
         for dy in start_y..(start_y + height) {
             for dz in start_z..(start_z + depth) {
-                let Some(x) = origin.0[0].checked_add(dx) else { continue };
-                let Some(y) = origin.0[1].checked_add(dy) else { continue };
-                let Some(z) = origin.0[2].checked_add(dz) else { continue };
+                let Some(x) = origin.0[0].checked_add(dx) else {
+                    continue;
+                };
+                let Some(y) = origin.0[1].checked_add(dy) else {
+                    continue;
+                };
+                let Some(z) = origin.0[2].checked_add(dz) else {
+                    continue;
+                };
                 let pos = BlockPos([x, y, z]);
                 if eligible_at(pos) {
                     selected.push(pos);
@@ -173,10 +186,7 @@ where
     selected.sort_by_key(|p| {
         let [x, y, z] = p.0;
         let [ox, oy, oz] = origin.0;
-        (
-            x.abs_diff(ox) + y.abs_diff(oy) + z.abs_diff(oz),
-            p.0,
-        )
+        (x.abs_diff(ox) + y.abs_diff(oy) + z.abs_diff(oz), p.0)
     });
     selected.truncate(cap);
     selected
@@ -240,10 +250,19 @@ mod tests {
 
     #[test]
     fn name_keys_and_tree_families_are_stable_and_exclude_leaves() {
-        assert_eq!(tree_family_key("minecraft:oak_log"), tree_family_key("minecraft:oak_wood"));
-        assert_eq!(tree_family_key("minecraft:crimson_stem"), tree_family_key("minecraft:crimson_hyphae"));
+        assert_eq!(
+            tree_family_key("minecraft:oak_log"),
+            tree_family_key("minecraft:oak_wood")
+        );
+        assert_eq!(
+            tree_family_key("minecraft:crimson_stem"),
+            tree_family_key("minecraft:crimson_hyphae")
+        );
         assert_eq!(tree_family_key("minecraft:oak_leaves"), None);
-        assert_eq!(block_name_key("minecraft:diamond_ore"), block_name_key("minecraft:diamond_ore"));
+        assert_eq!(
+            block_name_key("minecraft:diamond_ore"),
+            block_name_key("minecraft:diamond_ore")
+        );
     }
 
     #[test]
@@ -268,13 +287,19 @@ mod tests {
         let selected = select_vein(
             BlockPos([0, 0, 0]),
             |p| ore.contains(&p).then_some(7),
-            SelectionLimits { radius: 8, max_blocks: 64 },
+            SelectionLimits {
+                radius: 8,
+                max_blocks: 64,
+            },
         );
-        assert_eq!(selected, vec![
-            BlockPos([0, 0, 0]),
-            BlockPos([1, 0, 0]),
-            BlockPos([1, 1, 0])
-        ]);
+        assert_eq!(
+            selected,
+            vec![
+                BlockPos([0, 0, 0]),
+                BlockPos([1, 0, 0]),
+                BlockPos([1, 1, 0])
+            ]
+        );
     }
 
     #[test]
@@ -303,11 +328,14 @@ mod tests {
             AreaSize::default(),
             64,
         );
-        assert_eq!(selected, vec![
-            BlockPos([0, 0, 0]),
-            BlockPos([-1, 0, 0]),
-            BlockPos([1, 0, 0]),
-        ]);
+        assert_eq!(
+            selected,
+            vec![
+                BlockPos([0, 0, 0]),
+                BlockPos([-1, 0, 0]),
+                BlockPos([1, 0, 0]),
+            ]
+        );
     }
 
     #[test]
@@ -315,10 +343,17 @@ mod tests {
         let selected = connected_blocks(
             BlockPos([0, 0, 0]),
             |_| Some(1),
-            SelectionLimits { radius: 1, max_blocks: 10_000 },
+            SelectionLimits {
+                radius: 1,
+                max_blocks: 10_000,
+            },
         );
         assert_eq!(selected.len(), 27);
-        assert!(selected.iter().all(|p| p.within_radius(BlockPos([0, 0, 0]), 1)));
+        assert!(
+            selected
+                .iter()
+                .all(|p| p.within_radius(BlockPos([0, 0, 0]), 1))
+        );
     }
 
     #[test]
@@ -333,10 +368,16 @@ mod tests {
     fn empty_origin_and_zero_cap_select_nothing() {
         let origin = BlockPos([0, 0, 0]);
         assert!(connected_blocks(origin, |_| None, SelectionLimits::default()).is_empty());
-        assert!(connected_blocks(
-            origin,
-            |_| Some(1),
-            SelectionLimits { radius: 8, max_blocks: 0 },
-        ).is_empty());
+        assert!(
+            connected_blocks(
+                origin,
+                |_| Some(1),
+                SelectionLimits {
+                    radius: 8,
+                    max_blocks: 0,
+                },
+            )
+            .is_empty()
+        );
     }
 }
