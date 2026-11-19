@@ -21,8 +21,11 @@ jobs:
           cargo fetch --locked --manifest-path ../horizon-mixins/Cargo.toml
       - name: Check out pinned Horizon source
         run: |
-          git clone https://github.com/horizon-rust/horizon ../horizon
-          git -C ../horizon checkout "$(python3 -c 'import json; print(json.load(open("compatibility.json"))["horizon_revision"])')"
+          git init ../horizon
+          git -C ../horizon remote add origin https://github.com/horizon-rust/horizon
+          HORIZON_PIN="$(python3 -c 'import json; print(json.load(open("compatibility.json"))["horizon_revision"])')"
+          git -C ../horizon fetch --depth 1 origin "$HORIZON_PIN"
+          git -C ../horizon checkout FETCH_HEAD
           cargo fetch --locked --manifest-path ../horizon/Cargo.toml
       - run: cargo fetch --locked
       - run: cargo fmt --all --check
