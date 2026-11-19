@@ -47,6 +47,20 @@ def stage(horizon, stages):
                 archive.extractall(temporary, filter="data")
             if process.wait():
                 raise ValueError("git archive failed")
+            # The pinned Horizon revision has one documentation symlink
+            # (CLAUDE.md). The native mixin staging format intentionally rejects
+            # symlinks, and this docs-only link is not part of the build inputs.
+            for directory, names, files in os.walk(temporary, topdown=True, followlinks=False):
+                base = Path(directory)
+                for name in list(names):
+                    candidate = base / name
+                    if candidate.is_symlink():
+                        candidate.unlink()
+                        names.remove(name)
+                for name in files:
+                    candidate = base / name
+                    if candidate.is_symlink():
+                        candidate.unlink()
             for path, expected in COMPAT["source_sha256"].items():
                 if digest((temporary / path).read_bytes()) != expected:
                     raise ValueError(f"pinned source hash mismatch: {path}")
